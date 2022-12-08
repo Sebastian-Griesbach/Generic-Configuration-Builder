@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "generic-configuration-builder"
+version = "0.0.1"
+authors = [
+  { name="Sebastian Griesbach", email="sebastian.griesbach@zoho.eu" },
+]
+description = "A simple library for parsing a configuration file format which is intended to build dependencies and hold parameters - well suited for experimentaton settings in which different experiments use different clases."
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    'configparser',
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/Sebastian-Griesbach/Generic-Configuration-Builder"
+"Bug Tracker" = "https://github.com/Sebastian-Griesbach/Generic-Configuration-Builder/issues"
