@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "generic-configuration-builder"
+name = "generic_configuration_builder"
 version = "0.0.1"
 authors = [
   { name="Sebastian Griesbach", email="sebastian.griesbach@zoho.eu" },
