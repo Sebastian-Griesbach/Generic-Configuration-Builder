@@ -10,7 +10,6 @@ authors = [
 ]
 description = "A simple library for parsing a configuration file format which is intended to build dependencies and hold parameters - well suited for experimentaton settings in which different experiments use different clases."
 readme = "README.md"
-authors = [{ name = "Sebastian Griesbach", email = "sebastian.griesbach@zoho.eu"}]
 license = {file = "LICENSE"}
 requires-python = ">=3.7"
 dependencies = [

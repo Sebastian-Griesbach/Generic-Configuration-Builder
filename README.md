@@ -2,6 +2,9 @@
  A simple library for parsing a configuration file format which is intended to build dependencies and hold parameters - well suited for experimentation settings in which different experiments use different class constructs. This can hide away the mess of different setups in a main class especially when the resulting interfaces are handled the same. These setups can be fully described with these configuration files.
 
 ## Installation
+```
+pip install generic_configuration_builder
+```
 
 ## How to use
 With a prepared configuration simply call:
