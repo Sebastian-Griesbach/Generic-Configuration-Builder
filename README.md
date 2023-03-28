@@ -1,5 +1,6 @@
 # Generic-Configuration-Builder
- A simple library for parsing a configuration file format which is intended to build dependencies and hold parameters - well suited for experimentation settings in which different experiments use different class constructs. This can hide away the mess of different setups in a main class especially when the resulting interfaces are handled the same. These setups can be fully described with these configuration files.
+This library intends to help separate the setup and execution of experiments. If you need a bunch of different main classes to store the setup of your experiments, then this tiny library can help!
+The library passes a file format that can be used to set up any kind of class dependencies including all parameters, while also leaving the option to input additional parameters into the setup.
 
 ## Installation
 ```
@@ -40,9 +41,9 @@ RETURN = [instance_name, another_instance]
 
 Each instance has a name that is given in brackets [].
 After the name follows the module and the class name of the class that is supposed to be instantiated here, indicated by the keyword `~MODULE` and `~CLASS` keywords.
-Then the arguments that will be passed to the constructor follow with the name of the argument leading the equal sign and the value following. The basic python buildin types are supported here. <br>
-Previously defined instances can be used as arguments to other instances by using a * followed by previously defined instance name.<br>
-Optionally at the end of the configuration you may define a `~RETURN` section which specifies which instances will be returned by the `.gcb_build()` function as a dictionary with their instance names as keys and the instances as values. If this section is not defined only the last created instance in the config is returned as a single object.
+Then the arguments that will be passed to the constructor follow with the name of the argument leading, the equal sign and the value follow. The basic python built-in types are supported here. <br>
+Previously defined instances can be used as arguments to other instances by using a * followed by a previously defined instance name.<br>
+Optionally at the end of the configuration, you may define a `~RETURN` section which specifies which instances will be returned by the `.gcb_build()` function as a dictionary with their instance names as keys and the instances as values. If this section is not defined only the last created instance in the config is returned as a single object.
 
 ## Other features
 
@@ -77,20 +78,18 @@ If you want to pass the child object of some instance to another instance you ca
 ~MODULE = foos.module
 ~CLASS = FooClass
 argument_that_needs_chield_from previous_instance = *name_of_previous_instance.child
-
-...
 ```
 
-This works recursivly, so you could write `*instance.child.subchild` as well.
+This works recursively, so you could write `*instance.child.subchild` as well.
 
 ### Parsing torch and numpy arrays
 
-If you have numpy or pytorch installed AND the class you want to instanciate uses type hints in the signature of its `__init__` function, then you may pass array as arguments additionally to the other data types.
+If you have numpy or pytorch installed AND the class you want to instantiate uses type hints in the signature of its `__init__` function, then you may pass an array as arguments in addition to the other data types.
 
 ## Examples 
 Specific examples without any other python packages are not very helpful as native python classes usually don't need this kind of construction. 
-So here is a simple example with some made up classes.
-Assume the existance of `classes.py` in the working directory with the following content:
+So here is a simple example with some made-up classes.
+Assume the existence of `classes.py` in the working directory with the following content:
 ```
 class ChildClass():
     def __init__(self, some_string: str, some_float: float, another_string: str) -> None:
@@ -124,9 +123,9 @@ combined_string = *child_instance.combined_string
 RETURN = [child_instance, parent_instance, parent_instance.combined_string]
 ```
 
-Note that `another_string` is not defined in the config and therefor needs to be passed as an argument to `gcb_build()`.
+Note that `another_string` is not defined in the config and therefore needs to be passed as an argument to `gcb_build()`.
 
-This configuration would be build as follows:
+This configuration would be built as follows:
 
 ```
 from generic_configuration_builder import gcb_build
