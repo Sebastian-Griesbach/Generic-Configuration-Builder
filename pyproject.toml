@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "generic_configuration_builder"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
   { name="Sebastian Griesbach", email="sebastian.griesbach@zoho.eu" },
 ]

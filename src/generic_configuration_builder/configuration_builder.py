@@ -47,6 +47,8 @@ def gcb_build(configuration_path: str, **input_instances) -> Union[Dict[str, obj
 
     variables_dict = OrderedDict(**input_instances)
 
+    _check_necessary_arguments(configuration=configuration, variables_dict=variables_dict)
+
     for section in configuration.sections():
         if(section == RETURN_SECTION):
             return_variable_names = _parse_unmarked_string_list(configuration[RETURN_SECTION][RETURN_ATTRIBUTE])
@@ -72,6 +74,27 @@ def gcb_build(configuration_path: str, **input_instances) -> Union[Dict[str, obj
         variables_dict[section] = instance
 
     return variables_dict.popitem()[1]
+
+def _check_necessary_arguments(configuration: list[str], variables_dict: Dict[str, object]) -> None:
+    """Checks if all necessary keywords have been passed according to the configuration.
+
+    Args:
+        configuration (list[str]): The parsed ini configuration file.
+        variables_dict (Dict[str, object]): All passed keyword arguments.
+
+    Raises:
+        Exception: This exception occurs if not all keyword arguments have been passed.
+    """
+    instances_so_far = []
+    for section in configuration.sections():
+        for arg_name, arg_string in configuration[section].items():
+            if(arg_string.startswith(INSTANCE_INDICATOR)):
+                instance_name = arg_string[len(INSTANCE_INDICATOR):].split(".")[0]
+                if not (instance_name in variables_dict or instance_name in instances_so_far):
+                    raise Exception(f'The given configuration expects to be given a value for the keyword "{instance_name}" ' +
+                                    f'which is used as an argument for "{arg_name}" to initialize the instance "{section}". ' +
+                                    f'However this value is not passed. Please pass "{instance_name}" as a keyword to {gcb_build.__name__}.')
+                instances_so_far.append(section)
 
 def _read_configuration(configuration_path: str) -> list[str]:
     """Read the ini configuration given the path.
