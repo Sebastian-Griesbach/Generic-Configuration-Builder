@@ -94,7 +94,7 @@ def _check_necessary_arguments(configuration: list[str], variables_dict: Dict[st
                     raise Exception(f'The given configuration expects to be given a value for the keyword "{instance_name}" ' +
                                     f'which is used as an argument for "{arg_name}" to initialize the instance "{section}". ' +
                                     f'However this value is not passed. Please pass "{instance_name}" as a keyword to {gcb_build.__name__}.')
-                instances_so_far.append(section)
+        instances_so_far.append(section)
 
 def _read_configuration(configuration_path: str) -> list[str]:
     """Read the ini configuration given the path.
