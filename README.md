@@ -1,6 +1,6 @@
 # Generic-Configuration-Builder
 This library intends to help separate the setup and execution of experiments. If you need a bunch of different main classes to store the setup of your experiments, then this tiny library can help!
-The library passes a file format that can be used to set up any kind of class dependencies including all parameters, while also leaving the option to input additional parameters into the setup.
+The library parses a file format that can be used to set up any kind of class dependencies including all parameters, while also leaving the option to input additional parameters into the setup.
 
 ## Installation
 ```
@@ -43,12 +43,12 @@ Each instance has a name that is given in brackets [].
 After the name follows the module and the class name of the class that is supposed to be instantiated here, indicated by the keyword `~MODULE` and `~CLASS` keywords.
 Then the arguments that will be passed to the constructor follow with the name of the argument leading, the equal sign and the value follow. The basic python built-in types are supported here. <br>
 Previously defined instances can be used as arguments to other instances by using a * followed by a previously defined instance name.<br>
-Optionally at the end of the configuration, you may define a `~RETURN` section which specifies which instances will be returned by the `.gcb_build()` function as a dictionary with their instance names as keys and the instances as values. If this section is not defined only the last created instance in the config is returned as a single object.
+Optionally at the end of the configuration, you may define a `~RETURN` section which specifies which instances will be returned by the `.gcb_build()` function as a dictionary. In this dictionary the instance names are the keys and the initialized instances are the values. If this section is not defined only the last created instance in the configuration file is returned as a single object (not a dictionary).
 
 ## Other features
 
 ### Placeholder variables
-If you don't want to fix all parameters in the configuration you can write placeholders in the same way as you use previously defined instances.
+If you don't want to fix all parameters in the configuration you can write placeholders in the same way as you do with previously defined instances.
 
 ```
 [thingy]
@@ -57,8 +57,7 @@ If you don't want to fix all parameters in the configuration you can write place
 argument_i_dont_want_to_define_in_config = *name_of_argument
 ...
 ```
-The fill `name_of_argument` with a value pass a keyword argument with the same name to the `gcb_build()` function.
-
+To fill `name_of_argument` with a value, pass a keyword argument with the same name to the `gcb_build()` function. For example:
 ```
 from generic_configuration_builder import gcb_build
 
@@ -67,6 +66,21 @@ instances_dictionary = gcb_build("path/to/configuration.ini",
 ```
 
 Here there is no restriction on datatypes. You may pass any object like this.
+
+### Default values for placeholders
+If you only sometimes want to change a parameter but most of the time want to use a default value you can use default values defined in a `~DEFAULT` section as follows:
+
+```
+[~DEFAULT]
+name_of_argument = "This is the default value for this argument."
+funny_number = 24
+...
+```
+The default value can be overwritten by passing an according keyword argument to the `gcb_build()` function as follows:
+```
+instances_dictionary = gcb_build("path/to/configuration.ini", name_of_argument="this_string_overwrites_the_default",
+funny_number=25)
+```
 
 ### Use child objects as arguments
 
@@ -84,7 +98,7 @@ This works recursively, so you could write `*instance.child.subchild` as well.
 
 ### Parsing torch and numpy arrays
 
-If you have numpy or pytorch installed AND the class you want to instantiate uses type hints in the signature of its `__init__` function, then you may pass an array as arguments in addition to the other data types.
+If you have numpy or pytorch installed AND the class you want to instantiate uses type hints in the signature of its `__init__` function, then you may pass an array as arguments in addition to the other data types. The correct format here is the one you get when you `print()` the according array or tensor.
 
 ## Examples 
 Specific examples without any other python packages are not very helpful as native python classes usually don't need this kind of construction. 
@@ -106,6 +120,9 @@ class ParentClass():
 
 An `example_config.ini` could look like this:
 ```
+[~DEFAULT]
+an_integer = 25
+
 [child_instance]
 ~MODULE = classes
 ~CLASS = ChildClass
@@ -116,16 +133,16 @@ another_string = *another_string
 [parent_instance]
 ~MODULE = classes
 ~CLASS = ParentClass
-some_int = 25
+some_int = *an_integer
 combined_string = *child_instance.combined_string
 
 [~RETURN]
 RETURN = [child_instance, parent_instance, parent_instance.combined_string]
 ```
 
-Note that `another_string` is not defined in the config and therefore needs to be passed as an argument to `gcb_build()`.
+Note that `another_string` is not defined in the config and therefore needs to be passed as an argument to `gcb_build()`. The argument `an_integer` has a default value and therefore can be passed optionally to the function as an argument.
 
-This configuration would be built as follows:
+This configuration could for example be built as follows:
 
 ```
 from generic_configuration_builder import gcb_build
@@ -142,6 +159,6 @@ After execution `instances_dict` contains a dictionary of the instance:
     'parent_instance.combined_string': 'blub3.141'
 }
 ```
-Which now can be used in whatever why these objects are intended to be used.
+Which now can be used in whatever way these objects are intended to be used.
 
 Some extensive examples using a complex class structure can be found [here](https://github.com/Sebastian-Griesbach/Improving-Policy-Conditioned-Value-Functions/tree/main/experiments).

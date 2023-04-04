@@ -25,6 +25,7 @@ MODULE_MARKER = "~MODULE"
 CLASS_MARKER = "~CLASS"
 INSTANCE_INDICATOR = "*"
 RETURN_SECTION = "~RETURN"
+DEFAULT_SECTION = "~DEFAULT"
 RETURN_ATTRIBUTE = "RETURN"
 
 ### Code
@@ -45,7 +46,11 @@ def gcb_build(configuration_path: str, **input_instances) -> Union[Dict[str, obj
     """
     configuration = _read_configuration(configuration_path)
 
-    variables_dict = OrderedDict(**input_instances)
+    input_dict = OrderedDict(**input_instances)
+
+    variables_dict = _load_defaults(configuration=configuration)
+
+    variables_dict.update(input_dict)
 
     _check_necessary_arguments(configuration=configuration, variables_dict=variables_dict)
 
@@ -95,6 +100,29 @@ def _check_necessary_arguments(configuration: list[str], variables_dict: Dict[st
                                     f'which is used as an argument for "{arg_name}" to initialize the instance "{section}". ' +
                                     f'However this value is not passed. Please pass "{instance_name}" as a keyword to {gcb_build.__name__}.')
         instances_so_far.append(section)
+
+def _load_defaults(configuration: list[str]) -> Dict[str, object]:
+    """Loads defaults values given in the configuration. These values may be overwritten with values passed to the gcb_build function.
+
+    Args:
+        configuration (list[str]): The parsed configuration.
+
+    Raises:
+        Exception: If a error occurs while trying to parse a default value.
+
+    Returns:
+        Dict[str, object]: The parsed default values in a dictionary.
+    """
+    variables_dict = OrderedDict()
+    if DEFAULT_SECTION in configuration.sections():
+        for arg_name, arg_string in configuration[DEFAULT_SECTION].items():
+            try:
+                variables_dict[arg_name] = ast.literal_eval(arg_string)
+            except Exception as exception:
+                raise Exception(f'An Error occurred while trying to parse the default value for "{arg_name}" in the "{DEFAULT_SECTION}" section'+
+                               f' of the document. The given value "{arg_string}" could not be parsed as a literal.') from exception          
+    configuration.pop(DEFAULT_SECTION, None)
+    return variables_dict
 
 def _read_configuration(configuration_path: str) -> list[str]:
     """Read the ini configuration given the path.
