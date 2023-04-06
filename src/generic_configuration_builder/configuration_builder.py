@@ -301,7 +301,7 @@ def replace_strings(data: any, to_replace: list[str], variables_dict: Dict[str, 
     elif isinstance(data, tuple):
         return tuple(replace_strings(item, to_replace, variables_dict) for item in data)
     elif isinstance(data, dict):
-        return {key: replace_strings(value, to_replace, variables_dict) for key, value in data.items()}
+        return {replace_strings(key, to_replace, variables_dict): replace_strings(value, to_replace, variables_dict) for key, value in data.items()}
     elif isinstance(data, str):
         if data in to_replace:
             return _get_attribute(argument_string=data[len(INSTANCE_INDICATOR):], variables_dict=variables_dict)

@@ -23,11 +23,11 @@ The .ini file format is used as follows:
 ~Module = module_of.the_class
 ~Class = ClassName
 constructor_argument_1 = 42
-constructor_argument_2 = "int, strings, lists, dicts and tuples are supported"
+constructor_argument_2 = "int, strings, lists, dicts, tuples and None are supported"
 constructor_argument_3 = [1,2,3,4]
 constructor_argument_4 = (5,6,7,8)
 constructor_argument_5 = {"key_1": "value_1",
-                        "key_2": "value_2"}
+                        "key_2": None}
 
 [another_instance]
 ~MODULE = a_different.module
@@ -96,9 +96,25 @@ argument_that_needs_chield_from previous_instance = *name_of_previous_instance.c
 
 This works recursively, so you could write `*instance.child.subchild` as well.
 
+### Using nested instances
+
+You can nested an instance inside a list, tuple or dictionary and it will still be recognized. This also works recursively. For example like this:
+
+```
+[some_thing]
+~MODULE = some
+~CLASS = Thing
+dict_with_instance = {"object": *this_is_an_instance, 
+                    {"sub_dictionary_key": *this_is_another_instance}},
+                    {*instance_as_key : "some value"}
+list_of_tuple = [(*instance_1, *instance_2.child, 'a normal string'),
+                 (*instance_3, None, 'another_string')]
+```
+Note that not all objects can be keys of dictionaries.
+
 ### Parsing torch and numpy arrays
 
-If you have numpy or pytorch installed AND the class you want to instantiate uses type hints in the signature of its `__init__` function, then you may pass an array as arguments in addition to the other data types. The correct format here is the one you get when you `print()` the according array or tensor.
+If you have numpy or pytorch installed AND the class you want to instantiate uses type hints in the signature of its `__init__` function, then you may pass an array as arguments in addition to the other data types. The correct format here is the one you get when you `print()` the according array or tensor. These special data types can not be nested inside collections.
 
 ## Examples 
 Specific examples without any other python packages are not very helpful as native python classes usually don't need this kind of construction. 
