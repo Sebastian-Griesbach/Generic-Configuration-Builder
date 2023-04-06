@@ -4,18 +4,23 @@ from collections import OrderedDict
 import os
 import ast
 from typing import Union, Dict, Callable
+import re
 
 ### Optional Imports
+
+SPECIAL_TYPES = []
 
 try:
     import torch
     HAS_TORCH = True
+    SPECIAL_TYPES.append(torch.tensor)
 except ImportError:
     HAS_TORCH = False
 
 try:
     import numpy as np
     HAS_NUMPY = True
+    SPECIAL_TYPES.append(np.ndarray)
 except ImportError:
     HAS_NUMPY = False
 
@@ -170,15 +175,10 @@ def _initialize_class(module_name: str, class_name: str, init_args_string_dict: 
 
     init_args_instances = {}
     for arg_name, arg_string in init_args_string_dict.items():
-        if(arg_string.startswith(INSTANCE_INDICATOR)):
-            instance = _get_attribute(argument_string=arg_string[len(INSTANCE_INDICATOR):], variables_dict=variables_dict)
-            init_args_instances[arg_name] = instance
-            continue
-        
         if arg_name in init_args_types:
-            init_args_instances[arg_name] = _parse_value(dtype=init_args_types[arg_name],string=arg_string)
+            init_args_instances[arg_name] = _parse_value(string=arg_string, variables_dict=variables_dict, dtype=init_args_types[arg_name])
         elif full_arg_spec.varkw != None:
-            init_args_instances[arg_name] = ast.literal_eval(arg_string)
+            init_args_instances[arg_name] = _parse_value(string=arg_string, variables_dict=variables_dict, dtype=None)
 
     return _class(**init_args_instances)
 
@@ -192,7 +192,7 @@ def _load_class(module_name: str, class_name: str) -> type:
     Returns:
         type: According python class type object
     """
-    module = __import__(module_name, fromlist=class_name)
+    module = __import__(module_name, fromlist = class_name)
     _class = getattr(module, class_name)
     return _class
 
@@ -220,11 +220,12 @@ def _get_attribute(argument_string: str, variables_dict: Dict[str, object]) -> o
 
     return instance
 
-def _parse_value(dtype: type, string: str) -> object:
+def _parse_value(string: str, variables_dict: Dict[str, any], dtype: type = None) -> any:
     """Parse Python base datatypes from a string.
 
     Args:
         dtype (type): type to cast to.
+        variables_dict (Dict[str, any]):  Dictionary of already initialized classes.
         string (str): String to cast.
 
     Raises:
@@ -234,19 +235,19 @@ def _parse_value(dtype: type, string: str) -> object:
         object: Parsed string as Python object
     """
     try:
-        parsed = _parse_function_of(dtype)(string)
+        if dtype != None and dtype in SPECIAL_TYPES:
+            parse_function = _parse_function_of(dtype=dtype)
+            return parse_function(string)
+        else:
+            parsed = _parse_literal_with_instance_markers(value_string = string, variables_dict = variables_dict)
     except Exception as error:
-        raise Exception(f"Error while trying to parse: {string} as: {dtype}").with_traceback(error.__traceback__)
-
+        raise Exception(f"Error while trying to parse: {string}") from error
     return parsed
 
 def _parse_function_of(dtype: type) -> Callable:
     """Returns function to parse a string to dtype.
-        Always returns ast.literal_eval if dtype is not torch.Tensor or np.ndarray.
-
     Args:
         dtype (type): Type for which the parse function is needed.
-
     Returns:
         Callable: According parse function
     """
@@ -255,12 +256,60 @@ def _parse_function_of(dtype: type) -> Callable:
     if( HAS_NUMPY and dtype == np.ndarray):
         return _parse_numpy_array
 
-    return ast.literal_eval
+    raise Exception(f'No special parse function implemented for dtype: "{dtype}"')
 
-### Special parse functions
+def _parse_literal_with_instance_markers(value_string: str, variables_dict: Dict[str, any]) -> any:
+    """Parses a string to a python object. 
+    If string contain INSTANCE_INDICATOR than replace that string with the according instance.
+
+    Args:
+        value_string (str): String to parse
+        variables_dict (Dict[str, any]): Already initialized instances.
+
+    Returns:
+        any: _description_
+    """
+      
+    regex = f'([{INSTANCE_INDICATOR}][\w.]+)'
+    prog = re.compile(regex)
+    matches = re.findall(prog, value_string)
+    if len(matches) == 0:
+        return ast.literal_eval(value_string)
+    else:
+        for match in matches:
+            value_string = value_string.replace(match, f"'{match}'")
+
+        parsed_with_placeholders = ast.literal_eval(value_string)
+        return replace_strings(data=parsed_with_placeholders, to_replace=matches, variables_dict=variables_dict)
+        
+
+def replace_strings(data: any, to_replace: list[str], variables_dict: Dict[str, any]) -> any:
+    """Recursively iterates over a nested collection and replaces strings 
+        that are part of to_replace with instances.
+
+    Args:
+        data (any): A construct of nested collections containing list, tuples and dictionaries
+        to_replace (list[str]): List of strings that should be replaced with an instance.
+        variables_dict (Dict[str, any]):  Dictionary of already initialized classes. These are used to replace the according strings.
+
+    Returns:
+        any: The same structure of nested collections but with replaced strings.
+    """
+
+    if isinstance(data, list):
+        return [replace_strings(item, to_replace, variables_dict) for item in data]
+    elif isinstance(data, tuple):
+        return tuple(replace_strings(item, to_replace, variables_dict) for item in data)
+    elif isinstance(data, dict):
+        return {key: replace_strings(value, to_replace, variables_dict) for key, value in data.items()}
+    elif isinstance(data, str):
+        if data in to_replace:
+            return _get_attribute(argument_string=data[len(INSTANCE_INDICATOR):], variables_dict=variables_dict)
+    return data
 
 def _parse_unmarked_string_list(list_string: str) -> list[str]:
-    """ Converts a string that represents a list without INSTANCE_INDICATOR to a list of strings. Each entry is assumed to be a variable.
+    """ Converts a string that represents a list without INSTANCE_INDICATOR to a list of strings. 
+        Each entry is assumed to be a variable.
 
     Args:
         list_string (str): String that represents a list.
