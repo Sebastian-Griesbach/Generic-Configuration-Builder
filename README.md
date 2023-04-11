@@ -105,7 +105,7 @@ You can nested an instance inside a list, tuple or dictionary and it will still 
 ~MODULE = some
 ~CLASS = Thing
 dict_with_instance = {"object": *this_is_an_instance, 
-                    {"sub_dictionary_key": *this_is_another_instance}},
+                     "sub_dictionary": {"sub_dictionary_key": *this_is_another_instance}},
                     {*instance_as_key : "some value"}
 list_of_tuple = [(*instance_1, *instance_2.child, 'a normal string'),
                  (*instance_3, None, 'another_string')]
