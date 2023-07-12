@@ -98,7 +98,7 @@ This works recursively, so you could write `*instance.child.subchild` as well.
 
 ### Using nested instances
 
-You can nested an instance inside a list, tuple or dictionary and it will still be recognized. This also works recursively. For example like this:
+You can nest an instance inside a list, tuple or dictionary and it will still be recognized. This also works recursively. For example like this:
 
 ```
 [some_thing]
