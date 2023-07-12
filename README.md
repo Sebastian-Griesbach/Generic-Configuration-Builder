@@ -40,7 +40,7 @@ RETURN = [instance_name, another_instance]
 ```
 
 Each instance has a name that is given in brackets [].
-After the name follows the module and the class name of the class that is supposed to be instantiated here, indicated by the keyword `~MODULE` and `~CLASS` keywords.
+After the name follows the module and the class name of the class that is supposed to be instantiated here, indicated by the `~MODULE` and `~CLASS` keywords.
 Then the arguments that will be passed to the constructor follow with the name of the argument leading, the equal sign and the value follow. The basic python built-in types are supported here. <br>
 Previously defined instances can be used as arguments to other instances by using a * followed by a previously defined instance name.<br>
 Optionally at the end of the configuration, you may define a `~RETURN` section which specifies which instances will be returned by the `.gcb_build()` function as a dictionary. In this dictionary the instance names are the keys and the initialized instances are the values. If this section is not defined only the last created instance in the configuration file is returned as a single object (not a dictionary).
