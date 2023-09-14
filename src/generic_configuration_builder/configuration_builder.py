@@ -35,6 +35,7 @@ RETURN_ATTRIBUTE = "RETURN"
 
 ### Code
 
+
 def gcb_build(configuration_path: str, **input_instances) -> Union[Dict[str, object], object]:
     """ Build class and dependencies construct according to configuration file.
 
@@ -276,7 +277,7 @@ def _parse_literal_with_instance_markers(value_string: str, variables_dict: Dict
     if len(matches) == 0:
         return ast.literal_eval(value_string)
     else:
-        for match in matches:
+        for match in set(matches):
             value_string = value_string.replace(match, f"'{match}'")
 
         parsed_with_placeholders = ast.literal_eval(value_string)
