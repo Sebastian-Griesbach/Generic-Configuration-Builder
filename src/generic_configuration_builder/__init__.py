@@ -1,1 +1,1 @@
-from generic_configuration_builder.configuration_builder import gcb_build
+from generic_configuration_builder.configuration_builder import gcb_build, gcb_get_default_dictionary
