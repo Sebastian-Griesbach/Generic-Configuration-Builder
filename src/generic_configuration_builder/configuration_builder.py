@@ -92,7 +92,7 @@ def gcb_build(configuration_path: str, **input_instances) -> Union[Dict[str, obj
                 module_name, class_name, configuration[section], variables_dict)
         except Exception as exception:
             raise Exception(
-                f'An error occurred while trying to initialize "{section}".')
+                f'An error occurred while trying to initialize "{section}".') from exception
         variables_dict[section] = instance
 
     return variables_dict.popitem()[1]
@@ -166,7 +166,7 @@ def _load_defaults(configuration: list[str]) -> Dict[str, object]:
                 variables_dict[arg_name] = ast.literal_eval(arg_string)
             except Exception as exception:
                 raise Exception(f'An Error occurred while trying to parse the default value for "{arg_name}" in the "{DEFAULT_SECTION}" section' +
-                                f' of the document. The given value "{arg_string}" could not be parsed as a literal.')
+                                f' of the document. The given value "{arg_string}" could not be parsed as a literal.') from exception
     configuration.pop(DEFAULT_SECTION, None)
     return variables_dict
 
@@ -226,6 +226,9 @@ def _initialize_class(module_name: str, class_name: str, init_args_string_dict: 
         elif full_arg_spec.varkw != None:
             init_args_instances[arg_name] = _parse_value(
                 string=arg_string, variables_dict=variables_dict, dtype=None)
+        else:
+            raise Exception(
+                f'The initialization function of the class "{class_name}" does not accept a keyword argument of name "{arg_name}".')
 
     return _class(**init_args_instances)
 
@@ -293,7 +296,8 @@ def _parse_value(string: str, variables_dict: Dict[str, any], dtype: type = None
             parsed = _parse_literal_with_instance_markers(
                 value_string=string, variables_dict=variables_dict)
     except Exception as error:
-        raise Exception(f"Error while trying to parse: {string}")
+        raise Exception(
+            f'An error occurred while trying to parse the string "{string}" as a value.') from error
     return parsed
 
 
@@ -310,7 +314,7 @@ def _parse_function_of(dtype: type) -> Callable:
         return _parse_numpy_array
 
     raise Exception(
-        f'No special parse function implemented for dtype: "{dtype}"')
+        f'No special parse function implemented for dtype "{dtype}".')
 
 
 def _match_instances(string: str) -> list[str]:
