@@ -13,6 +13,7 @@ SPECIAL_TYPES = []
 
 try:
     import torch
+
     HAS_TORCH = True
     SPECIAL_TYPES.append(torch.tensor)
 except ImportError:
@@ -20,6 +21,7 @@ except ImportError:
 
 try:
     import numpy as np
+
     HAS_NUMPY = True
     SPECIAL_TYPES.append(np.ndarray)
 except ImportError:
@@ -37,8 +39,10 @@ RETURN_ATTRIBUTE = "RETURN"
 # Code
 
 
-def gcb_build(configuration_path: str, **input_instances) -> Union[Dict[str, object], object]:
-    """ Build class and dependencies construct according to configuration file.
+def gcb_build(
+    configuration_path: str, **input_instances
+) -> Union[Dict[str, object], object]:
+    """Build class and dependencies construct according to configuration file.
 
     Args:
         configuration_path (str): Path to configuration file
@@ -62,16 +66,19 @@ def gcb_build(configuration_path: str, **input_instances) -> Union[Dict[str, obj
     used_variables = set()
 
     _check_necessary_arguments(
-        configuration=configuration, variables_dict=variables_dict)
+        configuration=configuration, variables_dict=variables_dict
+    )
 
     for section in configuration.sections():
-        if (section == RETURN_SECTION):
+        if section == RETURN_SECTION:
             return_variable_names = _parse_unmarked_string_list(
-                configuration[RETURN_SECTION][RETURN_ATTRIBUTE])
+                configuration[RETURN_SECTION][RETURN_ATTRIBUTE]
+            )
             return_dict = {}
             for variable_name in return_variable_names:
                 return_dict[variable_name] = _get_attribute(
-                    argument_string=variable_name, variables_dict=variables_dict)
+                    argument_string=variable_name, variables_dict=variables_dict
+                )
                 used_variables.add(variable_name)
             return return_dict
 
@@ -79,20 +86,24 @@ def gcb_build(configuration_path: str, **input_instances) -> Union[Dict[str, obj
             module_name = configuration[section].pop(MODULE_MARKER)
         except KeyError as key_error:
             raise Exception(
-                f'Instance "{section}" is missing the "{MODULE_MARKER}" keyword')
+                f'Instance "{section}" is missing the "{MODULE_MARKER}" keyword'
+            )
 
         try:
             class_name = configuration[section].pop(CLASS_MARKER)
         except KeyError as key_error:
             raise Exception(
-                f'Instance "{section}" is missing the "{CLASS_MARKER}" keyword')
+                f'Instance "{section}" is missing the "{CLASS_MARKER}" keyword'
+            )
 
         try:
             instance = _initialize_class(
-                module_name, class_name, configuration[section], variables_dict)
+                module_name, class_name, configuration[section], variables_dict
+            )
         except Exception as exception:
             raise Exception(
-                f'An error occurred while trying to initialize "{section}".') from exception
+                f'An error occurred while trying to initialize "{section}".'
+            ) from exception
         variables_dict[section] = instance
 
     return variables_dict.popitem()[1]
@@ -111,7 +122,9 @@ def gcb_get_default_dictionary(configuration_path: str) -> Dict[str, object]:
     return dict(_load_defaults(configuration=configuration))
 
 
-def _check_necessary_arguments(configuration: list[str], variables_dict: Dict[str, object]) -> None:
+def _check_necessary_arguments(
+    configuration: list[str], variables_dict: Dict[str, object]
+) -> None:
     """Checks if all necessary keywords have been passed according to the configuration.
 
     Args:
@@ -129,22 +142,26 @@ def _check_necessary_arguments(configuration: list[str], variables_dict: Dict[st
         for arg_name, arg_string in configuration[section].items():
             matches = _match_instances(arg_string)
             for match in matches:
-                variable_name = match[len(
-                    INSTANCE_INDICATOR):].split(".")[0]
+                variable_name = match[len(INSTANCE_INDICATOR) :].split(".")[0]
                 used_variables.add(variable_name)
-            # if (arg_string.startswith(INSTANCE_INDICATOR)):
-            #     instance_name = arg_string[len(
-            #         INSTANCE_INDICATOR):].split(".")[0]
-                if not (variable_name in variables_dict or variable_name in instances_so_far):
-                    raise Exception(f'The given configuration expects to be given a value for the keyword "{variable_name}" ' +
-                                    f'which is used as an argument for "{arg_name}" to initialize the instance "{section}". ' +
-                                    f'However this value is not passed. Please pass "{variable_name}" as a keyword to {gcb_build.__name__}.')
+                # if (arg_string.startswith(INSTANCE_INDICATOR)):
+                #     instance_name = arg_string[len(
+                #         INSTANCE_INDICATOR):].split(".")[0]
+                if not (
+                    variable_name in variables_dict or variable_name in instances_so_far
+                ):
+                    raise Exception(
+                        f'The given configuration expects to be given a value for the keyword "{variable_name}" '
+                        + f'which is used as an argument for "{arg_name}" to initialize the instance "{section}". '
+                        + f'However this value is not passed. Please pass "{variable_name}" as a keyword to {gcb_build.__name__}.'
+                    )
         instances_so_far.append(section)
 
     unused_variables = defined_variables - used_variables
     if len(unused_variables) > 0:
         warnings.warn(
-            f'The following variables are defined but not used in the configuration: {unused_variables}')
+            f"The following variables are defined but not used in the configuration: {unused_variables}"
+        )
 
 
 def _load_defaults(configuration: list[str]) -> Dict[str, object]:
@@ -165,8 +182,10 @@ def _load_defaults(configuration: list[str]) -> Dict[str, object]:
             try:
                 variables_dict[arg_name] = ast.literal_eval(arg_string)
             except Exception as exception:
-                raise Exception(f'An Error occurred while trying to parse the default value for "{arg_name}" in the "{DEFAULT_SECTION}" section' +
-                                f' of the document. The given value "{arg_string}" could not be parsed as a literal.') from exception
+                raise Exception(
+                    f'An Error occurred while trying to parse the default value for "{arg_name}" in the "{DEFAULT_SECTION}" section'
+                    + f' of the document. The given value "{arg_string}" could not be parsed as a literal.'
+                ) from exception
     configuration.pop(DEFAULT_SECTION, None)
     return variables_dict
 
@@ -185,14 +204,18 @@ def _read_configuration(configuration_path: str) -> list[str]:
     """
     absolute_configuration_path = os.path.abspath(configuration_path)
     if not os.path.isfile(absolute_configuration_path):
-        raise Exception(
-            f'Configuration: {absolute_configuration_path} was not found.')
+        raise Exception(f"Configuration: {absolute_configuration_path} was not found.")
     configuration = configparser.ConfigParser()
     configuration.read(absolute_configuration_path)
     return configuration
 
 
-def _initialize_class(module_name: str, class_name: str, init_args_string_dict: Dict[str, str], variables_dict: Dict[str, object]) -> object:
+def _initialize_class(
+    module_name: str,
+    class_name: str,
+    init_args_string_dict: Dict[str, str],
+    variables_dict: Dict[str, object],
+) -> object:
     """initialized a class given all information as strings
 
     Args:
@@ -222,13 +245,18 @@ def _initialize_class(module_name: str, class_name: str, init_args_string_dict: 
     for arg_name, arg_string in init_args_string_dict.items():
         if arg_name in init_args_types:
             init_args_instances[arg_name] = _parse_value(
-                string=arg_string, variables_dict=variables_dict, dtype=init_args_types[arg_name])
+                string=arg_string,
+                variables_dict=variables_dict,
+                dtype=init_args_types[arg_name],
+            )
         elif full_arg_spec.varkw != None:
             init_args_instances[arg_name] = _parse_value(
-                string=arg_string, variables_dict=variables_dict, dtype=None)
+                string=arg_string, variables_dict=variables_dict, dtype=None
+            )
         else:
             raise Exception(
-                f'The initialization function of the class "{class_name}" does not accept a keyword argument of name "{arg_name}".')
+                f'The initialization function of the class "{class_name}" does not accept a keyword argument of name "{arg_name}".'
+            )
 
     return _class(**init_args_instances)
 
@@ -266,7 +294,8 @@ def _get_attribute(argument_string: str, variables_dict: Dict[str, object]) -> o
         base_instance = variables_dict[argument_attributes[0]]
     except KeyError as key_error:
         raise Exception(
-            f'"{argument_attributes[0]}" has not been assigned a value yet.')
+            f'"{argument_attributes[0]}" has not been assigned a value yet.'
+        )
     instance = base_instance
     for attribute_name in argument_attributes[1:]:
         instance = getattr(instance, attribute_name)
@@ -274,7 +303,9 @@ def _get_attribute(argument_string: str, variables_dict: Dict[str, object]) -> o
     return instance
 
 
-def _parse_value(string: str, variables_dict: Dict[str, any], dtype: type = None) -> any:
+def _parse_value(
+    string: str, variables_dict: Dict[str, any], dtype: type = None
+) -> any:
     """Parse Python base datatypes from a string.
 
     Args:
@@ -294,10 +325,12 @@ def _parse_value(string: str, variables_dict: Dict[str, any], dtype: type = None
             return parse_function(string)
         else:
             parsed = _parse_literal_with_instance_markers(
-                value_string=string, variables_dict=variables_dict)
+                value_string=string, variables_dict=variables_dict
+            )
     except Exception as error:
         raise Exception(
-            f'An error occurred while trying to parse the string "{string}" as a value.') from error
+            f'An error occurred while trying to parse the string "{string}" as a value.'
+        ) from error
     return parsed
 
 
@@ -308,13 +341,12 @@ def _parse_function_of(dtype: type) -> Callable:
     Returns:
         Callable: According parse function
     """
-    if (HAS_TORCH and dtype == torch.Tensor):
+    if HAS_TORCH and dtype == torch.Tensor:
         return _parse_torch_tensor
-    if (HAS_NUMPY and dtype == np.ndarray):
+    if HAS_NUMPY and dtype == np.ndarray:
         return _parse_numpy_array
 
-    raise Exception(
-        f'No special parse function implemented for dtype "{dtype}".')
+    raise Exception(f'No special parse function implemented for dtype "{dtype}".')
 
 
 def _match_instances(string: str) -> list[str]:
@@ -326,13 +358,15 @@ def _match_instances(string: str) -> list[str]:
     Returns:
         list[str]: List of strings that represent instances.
     """
-    regex = f'([{INSTANCE_INDICATOR}][\w.]+)'
+    regex = f"([{INSTANCE_INDICATOR}][\w.]+)"
     prog = re.compile(regex)
     return re.findall(prog, string)
 
 
-def _parse_literal_with_instance_markers(value_string: str, variables_dict: Dict[str, any]) -> any:
-    """Parses a string to a python object. 
+def _parse_literal_with_instance_markers(
+    value_string: str, variables_dict: Dict[str, any]
+) -> any:
+    """Parses a string to a python object.
     If string contain INSTANCE_INDICATOR than replace that string with the according instance.
 
     Args:
@@ -351,11 +385,17 @@ def _parse_literal_with_instance_markers(value_string: str, variables_dict: Dict
             value_string = value_string.replace(match, f"'{match}'")
 
         parsed_with_placeholders = ast.literal_eval(value_string)
-        return replace_strings(data=parsed_with_placeholders, to_replace=matches, variables_dict=variables_dict)
+        return replace_strings(
+            data=parsed_with_placeholders,
+            to_replace=matches,
+            variables_dict=variables_dict,
+        )
 
 
-def replace_strings(data: any, to_replace: list[str], variables_dict: Dict[str, any]) -> any:
-    """Recursively iterates over a nested collection and replaces strings 
+def replace_strings(
+    data: any, to_replace: list[str], variables_dict: Dict[str, any]
+) -> any:
+    """Recursively iterates over a nested collection and replaces strings
         that are part of to_replace with instances.
 
     Args:
@@ -372,15 +412,23 @@ def replace_strings(data: any, to_replace: list[str], variables_dict: Dict[str, 
     elif isinstance(data, tuple):
         return tuple(replace_strings(item, to_replace, variables_dict) for item in data)
     elif isinstance(data, dict):
-        return {replace_strings(key, to_replace, variables_dict): replace_strings(value, to_replace, variables_dict) for key, value in data.items()}
+        return {
+            replace_strings(key, to_replace, variables_dict): replace_strings(
+                value, to_replace, variables_dict
+            )
+            for key, value in data.items()
+        }
     elif isinstance(data, str):
         if data in to_replace:
-            return _get_attribute(argument_string=data[len(INSTANCE_INDICATOR):], variables_dict=variables_dict)
+            return _get_attribute(
+                argument_string=data[len(INSTANCE_INDICATOR) :],
+                variables_dict=variables_dict,
+            )
     return data
 
 
 def _parse_unmarked_string_list(list_string: str) -> list[str]:
-    """ Converts a string that represents a list without INSTANCE_INDICATOR to a list of strings. 
+    """Converts a string that represents a list without INSTANCE_INDICATOR to a list of strings.
         Each entry is assumed to be a variable.
 
     Args:
@@ -391,6 +439,8 @@ def _parse_unmarked_string_list(list_string: str) -> list[str]:
     """
     list_string = list_string[1:-1].split(",")
     list_string = list(map(lambda item: item.strip(" "), list_string))
+    # incase instance markers are used we remove them to avoid errors and confusion
+    list_string = list(map(lambda item: item.strip(INSTANCE_INDICATOR), list_string))
     return list_string
 
 
@@ -403,7 +453,7 @@ def _parse_torch_tensor(tensor_string: str) -> object:
     Returns:
         torch.Tensor: Parsed tensor
     """
-    if (tensor_string.startswith("tensor")):
+    if tensor_string.startswith("tensor"):
         tensor_string = tensor_string[7:-1]
 
     parsed_list = ast.literal_eval(tensor_string)
@@ -420,7 +470,7 @@ def _parse_numpy_array(array_string: str) -> object:
     Returns:
         np.ndarray: Parsed array
     """
-    if (array_string.startswith("array")):
+    if array_string.startswith("array"):
         tensor_string = array_string[6:-1]
 
     parsed_list = ast.literal_eval(tensor_string)
